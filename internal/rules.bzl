@@ -16,25 +16,18 @@ def _go_binary_impl(ctx):
     # Declare an output file for the main package and compile it from srcs. All
     # our output files will start with a prefix to avoid conflicting with
     # other rules.
-    main_archive = ctx.actions.declare_file("{name}_/main.a".format(name = ctx.label.name))
-    go_compile(
-        ctx,
-        srcs = ctx.files.srcs,
-        stdlib = ctx.files._stdlib,
-        out = main_archive,
-    )
+
+    # EXERCISE:
+    # - declare output file
+    # - call go_compile
 
     # Declare an output file for the executable and link it. Note that output
     # files may not have the same name as the rule, so we still need to use the
     # prefix here.
-    executable_path = "{name}_/{name}".format(name = ctx.label.name)
-    executable = ctx.actions.declare_file(executable_path)
-    go_link(
-        ctx,
-        main = main_archive,
-        stdlib = ctx.files._stdlib,
-        out = executable,
-    )
+
+    # EXERCISE:
+    # - declare output file
+    # - call go_link
 
     # Return the DefaultInfo provider. This tells Bazel what files should be
     # built when someone asks to build a go_binary rule. It also says which
@@ -47,20 +40,9 @@ def _go_binary_impl(ctx):
 # Declare the go_binary rule. This statement is evaluated during the loading
 # phase when this file is loaded. The function body above is evaluated only
 # during the analysis phase.
-go_binary = rule(
-    implementation = _go_binary_impl,
-    attrs = {
-        "srcs": attr.label_list(
-            allow_files = [".go"],
-            doc = "Source files to compile for the main package of this binary",
-        ),
-        "_stdlib": attr.label(
-            default = "//internal:stdlib",
-        ),
-    },
-    doc = "Builds an executable program from Go source code",
-    executable = True,
-)
+
+# EXERCISE: declare rule
+go_binary = None
 
 def _go_stdlib_impl(ctx):
     # Declare two outputs: an importcfg file, and a packages directory.

@@ -30,14 +30,7 @@ def go_compile(ctx, *, srcs, stdlib, out):
         importcfg = shell.quote(stdlib_importcfg.path),
         srcs = " ".join([shell.quote(src.path) for src in srcs]),
     )
-    ctx.actions.run_shell(
-        outputs = [out],
-        inputs = srcs + stdlib,
-        command = cmd,
-        env = {"GOPATH": "/dev/null"},  # suppress warning
-        mnemonic = "GoCompile",
-        use_default_shell_env = True,
-    )
+    # EXERCISE: create action
 
 def go_link(ctx, *, out, stdlib, main):
     """Links a Go executable.
@@ -55,14 +48,7 @@ def go_link(ctx, *, out, stdlib, main):
         importcfg = shell.quote(stdlib_importcfg.path),
         main = shell.quote(main.path),
     )
-    ctx.actions.run_shell(
-        outputs = [out],
-        inputs = [main] + stdlib,
-        command = cmd,
-        env = {"GOPATH": "/dev/null"},  # suppress warning
-        mnemonic = "GoLink",
-        use_default_shell_env = True,
-    )
+    # EXERCISE: create action
 
 def go_build_stdlib(ctx, out_importcfg, out_packages):
     """Builds the standard library.
