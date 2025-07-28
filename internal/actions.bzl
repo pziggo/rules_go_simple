@@ -12,6 +12,10 @@ by multiple rules.
 
 load("@bazel_skylib//lib:shell.bzl", "shell")
 
+def _format_arc(lib):
+    """Formats a GoLibraryInfo.info object as an -arc argument"""
+    return "{}={}".format(lib.importpath, lib.archive.path)
+
 def go_compile(ctx, *, importpath, srcs, stdlib, out, deps):
     """Compiles a single Go package from sources.
 
@@ -25,29 +29,20 @@ def go_compile(ctx, *, importpath, srcs, stdlib, out, deps):
             "somedir/example.com/foo.a".
         deps: list of GoLibraryInfo objects for direct dependencies.
     """
-    args = ctx.actions.args()
-    args.add("compile")
-    args.add("-stdimportcfg", stdlib.importcfg.path)
     dep_infos = [d.info for d in deps]
-    args.add_all(dep_infos, before_each = "-arc", map_each = _format_arc)
-    if importpath:
-        args.add("-p", importpath)
-    args.add("-o", out)
-    args.add_all(srcs)
-
     inputs = depset(
         direct = srcs + [dep.info.archive for dep in deps],
         transitive = [stdlib.files],
     )
 
-    ctx.actions.run(
-        outputs = [out],
-        inputs = inputs,
-        executable = ctx.executable._builder,
-        arguments = [args],
-        mnemonic = "GoCompile",
-        use_default_shell_env = True,
-    )
+    # EXERCISE: Add compile action using the builder tool
+    #  builder compile \
+    #   -stdimportcfg ${stdlib.importcfg.path} \
+    #   [-arc ${dep_infos.importpath}=${dep_infos.archive.path}...] \
+    #   [-p ${importpath}] \
+    #   -o ${out} \
+    #   ${srcs...}
+    pass
 
 def go_link(ctx, *, out, stdlib, main, deps):
     """Links a Go executable.
@@ -68,21 +63,13 @@ def go_link(ctx, *, out, stdlib, main, deps):
         transitive = [stdlib.files],
     )
 
-    args = ctx.actions.args()
-    args.add("link")
-    args.add("-stdimportcfg", stdlib.importcfg.path)
-    args.add_all(deps_set, before_each = "-arc", map_each = _format_arc)
-    args.add("-main", main)
-    args.add("-o", out)
-
-    ctx.actions.run(
-        outputs = [out],
-        inputs = inputs,
-        executable = ctx.executable._builder,
-        arguments = [args],
-        mnemonic = "GoLink",
-        use_default_shell_env = True,
-    )
+    # EXERCISE: Add link action using the builder tool
+    #  builder link \
+    #   -stdimportcfg ${stdlib.importcfg.path} \
+    #   [-arc ${deps_set.importpath}=${deps_set.archive.path}...] \
+    #   -main ${main} \
+    #   -o ${out}
+    pass
 
 def go_build_test(ctx, *, importpath, srcs, stdlib, deps, out, rundir):
     """Compiles and links a Go test executable.
@@ -98,32 +85,21 @@ def go_build_test(ctx, *, importpath, srcs, stdlib, deps, out, rundir):
     """
     direct_dep_infos = [d.info for d in deps]
     transitive_dep_infos = depset(transitive = [d.deps for d in deps]).to_list()
-
     inputs = (srcs +
               stdlib.files.to_list() +
               [d.archive for d in direct_dep_infos] +
               [d.archive for d in transitive_dep_infos])
 
-    args = ctx.actions.args()
-    args.add("test")
-    args.add("-stdimportcfg", stdlib.importcfg)
-    args.add_all(direct_dep_infos, before_each = "-direct", map_each = _format_arc)
-    args.add_all(transitive_dep_infos, before_each = "-transitive", map_each = _format_arc)
-    if rundir != "":
-        args.add("-dir", rundir)
-    if importpath != "":
-        args.add("-p", importpath)
-    args.add("-o", out)
-    args.add_all(srcs)
-
-    ctx.actions.run(
-        outputs = [out],
-        inputs = inputs,
-        executable = ctx.executable._builder,
-        arguments = [args],
-        mnemonic = "GoTest",
-        use_default_shell_env = True,
-    )
+    # EXERCISE: Add test action using the builder tool
+    #  builder test \
+    #   -stdimportcfg ${stdlib.importcfg.path} \
+    #  [-direct ${direct_dep_infos.importpath}=${direct_dep_infos.archive.path}...] \
+    #  [-transitive ${transitive_dep_infos.importpath}=${transitive_dep_infos.archive.path}...] \
+    #  [-dir ${rundir}] \
+    #  [-p ${importpath}] \
+    #  -o ${out} \
+    # ${srcs...}
+    pass
 
 def go_build_tool(ctx, *, srcs, stdlib, out):
     """Compiles and links a Go executable to be used in the toolchain.
@@ -158,10 +134,6 @@ go tool link -o {out} -importcfg {stdlib_importcfg} -- {out}.a
         mnemonic = "GoToolBuild",
         use_default_shell_env = True,
     )
-
-def _format_arc(lib):
-    """Formats a GoLibraryInfo.info object as an -arc argument"""
-    return "{}={}".format(lib.importpath, lib.archive.path)
 
 def go_build_stdlib(ctx, *, out_importcfg, out_packages):
     """Builds the standard library.
