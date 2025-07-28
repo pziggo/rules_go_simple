@@ -32,7 +32,7 @@ def _go_binary_impl(ctx):
         importpath = "main",
         srcs = ctx.files.srcs,
         stdlib = ctx.attr._stdlib[GoStdLibInfo],
-        deps = [dep[GoLibraryInfo] for dep in ctx.attr.deps],
+        deps = [], # EXERCISE: collect GoLibraryInfo from dependencies, pass to go_compile
         out = main_archive,
     )
 
@@ -45,7 +45,7 @@ def _go_binary_impl(ctx):
         ctx,
         main = main_archive,
         stdlib = ctx.attr._stdlib[GoStdLibInfo],
-        deps = [dep[GoLibraryInfo] for dep in ctx.attr.deps],
+        deps = [], # EXERCISE: collect GoLibraryInfo from dependencies, pass to go_link
         out = executable,
     )
 
@@ -83,58 +83,14 @@ go_binary = rule(
 
 def _go_library_impl(ctx):
     # Declare an output file for the library package and compile it from srcs.
-    archive = ctx.actions.declare_file("{name}_/pkg.a".format(name = ctx.label.name))
-    go_compile(
-        ctx,
-        importpath = ctx.attr.importpath,
-        srcs = ctx.files.srcs,
-        stdlib = ctx.attr._stdlib[GoStdLibInfo],
-        deps = [dep[GoLibraryInfo] for dep in ctx.attr.deps],
-        out = archive,
-    )
+
+    # EXERCISE: declare output file and actions, return GoLibraryInfo and DefaultInfo
 
     # Return the output file and metadata about the library.
-    return [
-        DefaultInfo(files = depset([archive])),
-        GoLibraryInfo(
-            info = struct(
-                importpath = ctx.attr.importpath,
-                archive = archive,
-            ),
-            deps = depset(
-                direct = [dep[GoLibraryInfo].info for dep in ctx.attr.deps],
-                transitive = [dep[GoLibraryInfo].deps for dep in ctx.attr.deps],
-            ),
-            files = depset(
-                direct = [archive],
-                transitive = [dep[GoLibraryInfo].files for dep in ctx.attr.deps],
-            ),
-        ),
-    ]
+    return []
 
-go_library = rule(
-    implementation = _go_library_impl,
-    attrs = {
-        "srcs": attr.label_list(
-            allow_files = [".go"],
-            doc = "Source files to compile",
-        ),
-        "deps": attr.label_list(
-            providers = [GoLibraryInfo],
-            doc = "Direct dependencies of the library",
-        ),
-        "importpath": attr.string(
-            mandatory = True,
-            doc = "Name by which the library may be imported",
-        ),
-        "_stdlib": attr.label(
-            default = "//internal:stdlib",
-            providers = [GoStdLibInfo],
-            doc = "Hidden dependency on the Go standard library",
-        ),
-    },
-    doc = "Compiles a Go archive from Go sources and dependencies",
-)
+# EXERCISE: declare go_library with srcs, deps, importpath attributes.
+go_library = None
 
 def _go_stdlib_impl(ctx):
     # Declare two outputs: an importcfg file, and a packages directory.
